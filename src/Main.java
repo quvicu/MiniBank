@@ -1,10 +1,24 @@
-package PACKAGE_NAME;
-
 import java.util.Scanner;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public class Main {
+    private static final double MAX_DEPOSIT_AMOUNT = 1000;
+    private static final double MAX_WITHDRAW_AMOUNT = 1000;
+    private static final double MIN_WITHDRAW_AMOUNT = 0;
+    private static String formatAmount(double zahl) {
+        long cents = Math.round(zahl * 100);
+        long euroTeil = cents / 100;
+        long centTeil = cents % 100;
+
+        return String.format("%,d", euroTeil)
+                .replace(",", ".")
+                + ","
+                + String.format("%02d", centTeil)
+                + " €";
+
+    }
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         int choice;
@@ -16,16 +30,16 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    deposit(currentBalance, scanner);
+                    currentBalance = deposit(currentBalance, scanner);
                     break;
                 case 2:
-                    withdraw(currentBalance, scanner);
+                    currentBalance = withdraw(currentBalance, scanner);
                     break;
                 case 3:
                     printCurrentBalance(currentBalance);
                     break;
                 case 4:
-                    interestCalculator(scanner);
+                    calculateInterest(scanner);
                     break;
                 case 0:
                     printEndMessage();
@@ -33,7 +47,7 @@ public class Main {
                 default:
                     System.out.println("Ungültige Eingabe");
             }
-        }  while (choice != 0);
+        } while (choice != 0);
     }
 
     private static void printStart() {
@@ -45,63 +59,76 @@ public class Main {
         System.out.println("Drücken Sie die 0 um das Programm zu beenden\n");
     }
 
-    private static void deposit(double currentBalance, Scanner scanner) {
-        System.out.println("Betrag einzahlen:  ");
+    private static double deposit(double currentBalance, Scanner scanner) {
+        System.out.println("Betrag einzahlen: ");
         double amount = scanner.nextDouble();
-        if (amount >= 1000) {
-            System.out.println("Sie können nicht mehr als 1000 € einzahlen");
+        if (amount > MAX_DEPOSIT_AMOUNT) {
+            System.out.println("Sie können nicht mehr als 1.000,00 € einzahlen");
+            return currentBalance;
         } else {
             currentBalance += amount;
-            System.out.println("Ihr Kontostand beträgt:" + currentBalance + "€. \nSie haben erfolgreich:" + amount + "€ eingezahlt");
+            System.out.println("Sie haben erfolgreich " + formatAmount(amount) + " eingezahlt");
+            System.out.println("Ihr neuer Kontostand beträgt: " + formatAmount(currentBalance));
+            return currentBalance;
         }
     }
 
-    private static void withdraw(double currentBalance, Scanner scanner) {
+    private static double withdraw(double currentBalance, Scanner scanner) {
         System.out.println("Betrag abheben:  ");
         double withdrawValue = scanner.nextDouble();
         if (withdrawValue > currentBalance) {
             System.out.println("Fehler!! Sie haben nicht genug Geld auf ihrem Konto");
-        } else if (withdrawValue >= 1000) {
+            return currentBalance;
+        } else if (withdrawValue > MAX_WITHDRAW_AMOUNT) {
             System.out.println("Sie können nicht mehr als 1000 € auszahlen");
+            return currentBalance;
+        } else if (withdrawValue < MIN_WITHDRAW_AMOUNT) {
+            System.out.println("Sie können keine negativen Beträge abheben");
+            return currentBalance;
         } else {
             currentBalance -= withdrawValue;
-            System.out.println("Ihr Kontostand beträgt:" + currentBalance + "€. \nSie haben erfolgreich:" + withdrawValue + "€ ausgezhalt");
+            System.out.println("Ihr Kontostand beträgt:" + formatAmount(currentBalance) + ".\nSie haben erfolgreich:" + formatAmount(withdrawValue) + "ausgezhalt");
+            return currentBalance;
         }
     }
 
     private static void printCurrentBalance(double currentBalance) {
-        System.out.println("Ihr Kontostand beträgt:" + currentBalance + "€");
+        System.out.println("Ihr Kontostand beträgt:" + formatAmount(currentBalance));
     }
 
-    private static void interestCalculator(Scanner scanner) {
-        double startingCapital = 0;
-        double interestRate = 0;
-        double duration = 0;
-        double finalCapital = 0;
-        double interest = 0;
+    private static void calculateInterest(Scanner scanner) {
+        double startingCapital;
+        double interestRate;
+        int duration;
 
-        System.out.print("Enter Capital: ");
+        double capitalWeg2;
+
+        System.out.print("Geben Sie ihr Kapital an: ");
         startingCapital = scanner.nextDouble();
 
-        System.out.print("Enter Interest rate: ");
+        System.out.print("Geben Sie die Zinsrate als Dezimalzahl an (zum Beispiel gib 0,05 für 5% ein): ");
         interestRate = scanner.nextDouble();
 
-        System.out.print("Enter Duration: ");
-        duration = scanner.nextDouble();
+        System.out.print("Geben Sie die Laufzeit in Jahren an: ");
+        duration = scanner.nextInt();
+
+        double capitalWeg1 = startingCapital;  // einmal auf 1000 setzen
 
         for (int i = 1; i <= duration; i++) {
-            finalCapital = startingCapital * Math.pow(1 + interestRate, i);
-            double capitalRounded = rounder(finalCapital);
-            System.out.println("Year: " + i + " Capital: " + capitalRounded);
-
-            interest = finalCapital - startingCapital;
-            double interestRounded = rounder(interest);
-            System.out.println("Year: " + i + " Interest: " + interestRounded + "\n");
+            capitalWeg1 += capitalWeg1 * interestRate;// wächst jedes Jahr weiter
+            System.out.println("Jahr: " + i + "\nGesamtkapital: " + roundDecimal(capitalWeg1) + " Zinsen: " + roundDecimal(capitalWeg1 - startingCapital));
         }
+        System.out.println("Weg 1: " + roundDecimal(capitalWeg1));
+
+        capitalWeg2 = startingCapital * Math.pow(1 + interestRate, duration);
+        System.out.println("Weg 2: " + roundDecimal(capitalWeg2));
+
+        boolean check = roundDecimal(capitalWeg1) == roundDecimal(capitalWeg2);
+        System.out.println(check);
     }
 
-    private static double rounder(double number) {
-         return new BigDecimal(number)
+    private static double roundDecimal(double number) {
+        return new BigDecimal(number)
                 .setScale(2, RoundingMode.HALF_UP)
                 .doubleValue();
     }
