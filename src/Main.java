@@ -6,6 +6,12 @@ public class Main {
     private static final double MAX_DEPOSIT_AMOUNT = 1000;
     private static final double MAX_WITHDRAW_AMOUNT = 1000;
     private static final double MIN_WITHDRAW_AMOUNT = 0;
+    private static final int MAX_ACCOUNTS = 10;
+    private static String[] owners   = new String[MAX_ACCOUNTS];
+    private static String[] ibans    = new String[MAX_ACCOUNTS];
+    private static long[]   balances = new long[MAX_ACCOUNTS];
+    private static int      accountCount = 0;
+
     private static String formatAmount(double zahl) {
         long cents = Math.round(zahl * 100);
         long euroTeil = cents / 100;
@@ -30,15 +36,21 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    currentBalance = deposit(currentBalance, scanner);
+                    createAccount(scanner);
                     break;
                 case 2:
-                    currentBalance = withdraw(currentBalance, scanner);
+                    printAllAccounts();
                     break;
                 case 3:
-                    printCurrentBalance(currentBalance);
+                    currentBalance = deposit(currentBalance, scanner);
                     break;
                 case 4:
+                    currentBalance = withdraw(currentBalance, scanner);
+                    break;
+                case 5:
+                    printCurrentBalance(currentBalance);
+                    break;
+                case 6:
                     calculateInterest(scanner);
                     break;
                 case 0:
@@ -52,11 +64,53 @@ public class Main {
 
     private static void printStart() {
         System.out.println("\n---Willkommen---\n");
-        System.out.println("Drücken Sie die 1 fürs Einzahlen");
-        System.out.println("Drücken SIe die 2 fürs Auszahlen");
-        System.out.println("Drücken Sie die 3 um ihren Kontostand zu sehen");
-        System.out.println("Drücken Sie die 4 um den Zinsrechner zu bezahlen");
+        System.out.println("Drücken Sie die 1 um ein Konto anzulegen");
+        System.out.println("Drücken Sie die 2 um alle Konten anzuzeigen");
+        System.out.println("Drücken Sie die 3 fürs Einzahlen");
+        System.out.println("Drücken Sie die 4 fürs Abheben");
+        System.out.println("Drücken Sie die 5 um Kontostand zu sehen");
         System.out.println("Drücken Sie die 0 um das Programm zu beenden\n");
+    }
+
+    private static void createAccount(Scanner scanner) {
+        if (accountCount >= MAX_ACCOUNTS) {
+            System.out.println("Fehler! Maximale Kontoanzahl erreicht!");
+            return;
+        }
+        scanner.nextLine();
+
+        System.out.print("Name des Kontoinhabers: ");
+        String name = scanner.nextLine();
+
+        System.out.print("IBAN: ");
+        String iban = scanner.nextLine();
+
+        System.out.print("Startguthaben in Cent: ");
+        long startBalance = scanner.nextLong();
+
+        owners[accountCount]   = name;
+        ibans[accountCount]    = iban;
+        balances[accountCount] = startBalance;
+        accountCount++;
+
+        System.out.println("Konto erfolgreich angelegt!");
+        System.out.println("Inhaber: " + name);
+        System.out.println("IBAN: " + iban);
+        System.out.println("Startguthaben: " + formatAmount(startBalance));
+    }
+
+    private static void printAllAccounts() {
+        if (accountCount == 0) {
+            System.out.println("Keine Konten vorhanden!");
+            return;
+        }
+        System.out.println("--- Alle Konten ---");
+        for (int i = 0; i < accountCount; i++) {
+            System.out.println("Konto " + (i + 1) + ":");
+            System.out.println("  Inhaber: " + owners[i]);
+            System.out.println("  IBAN:    " + ibans[i]);
+            System.out.println("  Saldo:   " + formatAmount(balances[i]));
+        }
     }
 
     private static double deposit(double currentBalance, Scanner scanner) {
